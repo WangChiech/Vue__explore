@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vue router (history)</title>
+</head>
+<body>
+  <div id="app">
+    <router-link to="/"><button>home</button></router-link> / 
+    <router-link to="/about"><button>about</button></router-link>
+    <route-view></route-view>
+  </div>
+  <script type="module">
+    import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.esm.browser.js'
+    let _Vue = null
+    class VueRouter {
+      static install (Vue) {
+        if (VueRouter.install.installed === true) {
+          return
+        }
+        VueRouter.install.installed = true
+        _Vue = Vue
+        _Vue.mixin({
+          beforeCreate () {
+            if (this.$options.router) {
+              _Vue.prototype.router = this.$options.router
+            }
+          }
+        })
+      }
+      constructor (props) {
+        this.$options = props
+        this.data = _Vue.observable({
+          current: '/'
+        })
+        this.routerMap = {}
+        this._init()
+      }
+      _init () {
+        this.getRouterMap()
+        this.getComponents()
+      }
+      getRouterMap () {
+        this.$options.routes.forEach(item => {
+          this.routerMap[item.path] = item.component
+        })
+      }
+      getComponents () {
+        const self = this
+        _Vue.component('router-link', {
+          props:  ['to'],
+          template: '<a @click="handleLinkTo"><slot></slot></a>',
+          methods: {
+            handleLinkTo (e) {
+              history.pushState({}, '', this.to)
+              self.data.current = this.to
+              e.preventDefault()
+            }
+          }
+        })
+        _Vue.component('route-view', {
+          render (h) {
+            const comp = self.routerMap[self.data.current]
+            return h(comp)
+          }
+        })
+      }
+    }
+
+
+    Vue.use(VueRouter)
+
+    const home = Vue.component('home', {
+      data () {
+        return {
+          name: 'home'
+        }
+      },
+      template: '<div><h2>{{ name }}</h2></div>'
+    })
+    const about = Vue.component('about', {
+      data () {
+        return {
+          name: 'about'
+        }
+      },
+      template: '<div><h2>{{ name }}</h2></div>'
+    })
+    const router = new VueRouter({
+      routes: [
+        {
+          path: '/',
+          component: home
+        },
+        {
+          path: '/about',
+          component: about
+        }
+      ]
+    })
+    const app = new Vue({
+      el: '#app',
+      router
+    })
+  </script>
+</body>
+</html>
